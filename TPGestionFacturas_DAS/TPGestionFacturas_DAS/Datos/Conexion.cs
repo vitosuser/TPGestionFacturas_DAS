@@ -41,7 +41,7 @@ namespace TPGestionFacturas_DAS.Datos
             BEGIN
                 CREATE TABLE Productos (
                     Id INT PRIMARY KEY IDENTITY(1,1),
-                    NumeroProducto INT NOT NULL,
+                    NumeroProducto NVARCHAR(30) NOT NULL UNIQUE,
                     Nombre NVARCHAR(80) NOT NULL,
                     Precio DECIMAL(18,2) NOT NULL,
                     Activo BIT NOT NULL
@@ -52,11 +52,12 @@ namespace TPGestionFacturas_DAS.Datos
             BEGIN
                 CREATE TABLE Facturas (
                     Id INT PRIMARY KEY IDENTITY(1,1),
-                    NumeroFactura INT NOT NULL,
+                    NumeroFactura INT NOT NULL UNIQUE,
                     Fecha DATE NOT NULL,
                     ClienteNombre NVARCHAR(80) NOT NULL,
                     ClienteDocumento NVARCHAR(20) NOT NULL,
-                    Total DECIMAL(18,2) NOT NULL,
+                    Estado NVARCHAR(20) NOT NULL CONSTRAINT DF_Facturas_Estado DEFAULT 'Emitida',
+                    Total DECIMAL(18,2) NOT NULL
                 )
             END
 
@@ -77,6 +78,32 @@ namespace TPGestionFacturas_DAS.Datos
                 conexion);
             crearTablas.ExecuteNonQuery();
 
+            using (SqlCommand migraciones = new SqlCommand(
+                """
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE name = 'Estado' AND object_id = OBJECT_ID('Facturas'))
+                    ALTER TABLE Facturas ADD Estado NVARCHAR(20) NOT NULL CONSTRAINT DF_Facturas_Estado DEFAULT 'Emitida';
+
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM sys.indexes i
+                    INNER JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+                    INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+                    WHERE i.object_id = OBJECT_ID('Facturas') AND i.is_unique = 1 AND c.name = 'NumeroFactura')
+                    ALTER TABLE Facturas ADD CONSTRAINT UQ_Facturas_NumeroFactura UNIQUE (NumeroFactura);
+
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM sys.indexes i
+                    INNER JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+                    INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+                    WHERE i.object_id = OBJECT_ID('Productos') AND i.is_unique = 1 AND c.name = 'NumeroProducto')
+                    ALTER TABLE Productos ADD CONSTRAINT UQ_Productos_NumeroProducto UNIQUE (NumeroProducto);
+                """,
+                conexion))
+            {
+                migraciones.ExecuteNonQuery();
+            }
+
             using SqlCommand hayProductos = new SqlCommand("SELECT COUNT(*) FROM Productos", conexion);
             int cantidad = (int)hayProductos.ExecuteScalar();
             if (cantidad > 0)
@@ -87,9 +114,9 @@ namespace TPGestionFacturas_DAS.Datos
             using SqlCommand seed = new SqlCommand(
                 """
             INSERT INTO Productos (NumeroProducto, Nombre, Precio, Activo) VALUES
-            (1, N'Mouse', 100.00, 1),
-            (2, N'Teclado', 200.00, 1),
-            (3, N'Monitor', 300.00, 1)
+            (N'P001', N'Mouse', 100.00, 1),
+            (N'P002', N'Teclado', 200.00, 1),
+            (N'P003', N'Monitor', 300.00, 1)
             """,
                 conexion);
             seed.ExecuteNonQuery();

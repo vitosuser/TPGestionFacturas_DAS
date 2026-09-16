@@ -9,9 +9,14 @@ namespace TPGestionFacturas_DAS.Entidades
     internal class Producto
     {
         public int Id { get; set; }
-        public int Codigo { get; set; }
-        public string Nombre { get; set; }
+        public string Codigo { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
         public decimal Precio { get; set; }
         public bool Activo { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Codigo} - {Nombre}";
+        }
     }
 }
