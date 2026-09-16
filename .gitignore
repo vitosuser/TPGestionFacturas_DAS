@@ -2,6 +2,5 @@ TP01_Consigna.md
 ClienteDaoEjemplo.txt
 OrdenDaoEjemplo.txt
 .vs/
-TPGestionFacturas_DAS/bin/
-TPGestionFacturas_DAS/obj/
-TPGestionFacturas_DAS/vs/
+bin/
+obj/
